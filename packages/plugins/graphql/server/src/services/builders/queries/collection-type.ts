@@ -8,14 +8,10 @@ export default ({ strapi }: Context) => {
 
   const { naming } = getService('utils');
   const { transformArgs, getContentTypeArgs } = getService('builders').utils;
-  const { toEntityResponse, toEntityResponseCollection } = getService('format').returnTypes;
+  const { toEntityResponseCollection } = getService('format').returnTypes;
 
-  const {
-    getFindOneQueryName,
-    getEntityResponseName,
-    getFindQueryName,
-    getEntityResponseCollectionName,
-  } = naming;
+  const { getFindOneQueryName, getTypeName, getFindQueryName, getEntityResponseCollectionName } =
+    naming;
 
   const buildCollectionTypeQueries = (contentType: Schema.CollectionType) => {
     const findOneQueryName = `Query.${getFindOneQueryName(contentType)}`;
@@ -64,13 +60,11 @@ export default ({ strapi }: Context) => {
     t: Nexus.blocks.ObjectDefinitionBlock<'Query'>,
     contentType: Schema.CollectionType
   ) => {
-    const { uid } = contentType;
-
     const findOneQueryName = getFindOneQueryName(contentType);
-    const responseTypeName = getEntityResponseName(contentType);
+    const typeName = getTypeName(contentType);
 
     t.field(findOneQueryName, {
-      type: responseTypeName,
+      type: typeName,
 
       args: getContentTypeArgs(contentType, { multiple: false }),
 
@@ -82,9 +76,7 @@ export default ({ strapi }: Context) => {
           .buildQueriesResolvers({ contentType });
 
         // queryResolvers will sanitize params
-        const value = findOne(parent, transformedArgs, ctx);
-
-        return toEntityResponse(value, { args: transformedArgs, resourceUID: uid });
+        return findOne(parent, transformedArgs, ctx);
       },
     });
   };
@@ -109,12 +101,12 @@ export default ({ strapi }: Context) => {
       async resolve(parent, args, ctx) {
         const transformedArgs = transformArgs(args, { contentType, usePagination: true });
 
-        const { find } = getService('builders')
+        const { findMany } = getService('builders')
           .get('content-api')
           .buildQueriesResolvers({ contentType });
 
         // queryResolvers will sanitize params
-        const nodes = await find(parent, transformedArgs, ctx);
+        const nodes = await findMany(parent, transformedArgs, ctx);
 
         return toEntityResponseCollection(nodes, { args: transformedArgs, resourceUID: uid });
       },

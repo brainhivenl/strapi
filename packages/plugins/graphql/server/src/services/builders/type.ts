@@ -146,9 +146,16 @@ export default (context: Context) => {
     const args = attribute.multiple ? getContentTypeArgs(fileContentType) : undefined;
     const type = attribute.multiple
       ? naming.getRelationResponseCollectionName(fileContentType)
-      : naming.getEntityResponseName(fileContentType);
+      : naming.getTypeName(fileContentType);
 
-    builder.field(attributeName, { type, resolve, args });
+    builder.field(attributeName, {
+      type,
+      async resolve(...args: unknown[]) {
+        const res = await resolve(...args);
+        return attribute.multiple ? res : res.value;
+      },
+      args,
+    });
   };
 
   /**
@@ -221,7 +228,7 @@ export default (context: Context) => {
 
     const type = isToManyRelation
       ? naming.getRelationResponseCollectionName(targetContentType)
-      : naming.getEntityResponseName(targetContentType);
+      : naming.getTypeName(targetContentType);
 
     const args = isToManyRelation ? getContentTypeArgs(targetContentType) : undefined;
 
@@ -230,7 +237,14 @@ export default (context: Context) => {
 
     extension.use({ resolversConfig: { [resolverPath]: { auth: { scope: [resolverScope] } } } });
 
-    builder.field(attributeName, { type, resolve, args });
+    builder.field(attributeName, {
+      type,
+      async resolve(...args: unknown[]) {
+        const res = await resolve(...args);
+        return isToManyRelation ? res : res.value;
+      },
+      args,
+    });
   };
 
   const isNotPrivate = (contentType: Schema.Any) => (attributeName: string) => {
@@ -274,9 +288,32 @@ export default (context: Context) => {
         name,
 
         definition(t) {
+          if (modelType !== 'component' && isNotDisabled(contentType)('id')) {
+            t.nonNull.id('id', {
+              deprecation: 'Use `documentId` instead',
+            });
+          }
+
           if (modelType === 'component' && isNotDisabled(contentType)('id')) {
             t.nonNull.id('id');
           }
+
+          if (modelType !== 'component' && isNotDisabled(contentType)('documentId')) {
+            t.nonNull.id('documentId');
+          }
+
+          // TODO: only add if v4 compat is enabled
+          t.nonNull.field('attributes', {
+            deprecation: 'Use root level fields instead',
+            type: name,
+            resolve: (parent) => parent,
+          });
+
+          t.nonNull.field('data', {
+            deprecation: 'Use root level fields instead',
+            type: name,
+            resolve: (parent) => parent,
+          });
 
           /** Attributes
            *

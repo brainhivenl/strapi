@@ -1,11 +1,13 @@
 import { objectType, nonNull } from 'nexus';
-import { defaultTo, prop, pipe } from 'lodash/fp';
+import { defaultTo, prop, pipe, identity } from 'lodash/fp';
 import type { Schema } from '@strapi/types';
 import type { Context } from '../types';
 
 export default ({ strapi }: Context) => {
-  const { naming } = strapi.plugin('graphql').service('utils');
-  const { RESPONSE_COLLECTION_META_TYPE_NAME } = strapi.plugin('graphql').service('constants');
+  const { service: getService } = strapi.plugin('graphql');
+
+  const { naming } = getService('utils');
+  const { RESPONSE_COLLECTION_META_TYPE_NAME, PAGINATION_TYPE_NAME } = getService('constants');
 
   return {
     /**
@@ -15,23 +17,38 @@ export default ({ strapi }: Context) => {
      */
     buildResponseCollectionDefinition(contentType: Schema.ContentType) {
       const name = naming.getEntityResponseCollectionName(contentType);
-      const entityName = naming.getEntityName(contentType);
+      const typeName = naming.getTypeName(contentType);
+      const { resolvePagination } = getService('builders').get('content-api');
 
       return objectType({
         name,
-
         definition(t) {
-          t.nonNull.list.field('data', {
-            type: nonNull(entityName),
+          // NOTE: add edges & cursor based pagination to support the relay spec in a later version
 
+          t.nonNull.list.field('nodes', {
+            type: nonNull(typeName),
             resolve: pipe(prop('nodes'), defaultTo([])),
           });
 
-          t.nonNull.field('meta', {
-            type: RESPONSE_COLLECTION_META_TYPE_NAME,
+          // TODO: only add if v4 compat is enabled
+          // TODO: remove in next major
+          t.nonNull.list.field('data', {
+            deprecation: 'Use `nodes` field instead',
+            type: nonNull(typeName),
+            resolve: pipe(prop('nodes'), defaultTo([])),
+          });
 
-            // Pass down the args stored in the source object
-            resolve: prop('info'),
+          t.nonNull.field('pageInfo', {
+            type: PAGINATION_TYPE_NAME,
+            resolve: resolvePagination,
+          });
+
+          // TODO: only add if v4 compat is enabled
+          // TODO: remove in next major
+          t.nonNull.field('meta', {
+            deprecation: 'Use the `pagination` field instead',
+            type: RESPONSE_COLLECTION_META_TYPE_NAME,
+            resolve: identity,
           });
         },
       });

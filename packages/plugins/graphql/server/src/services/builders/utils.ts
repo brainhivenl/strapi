@@ -1,4 +1,5 @@
 import { entries, mapValues, omit } from 'lodash/fp';
+import { idArg, nonNull } from 'nexus';
 import { pagination } from '@strapi/utils';
 import type { Strapi, Schema } from '@strapi/types';
 
@@ -37,7 +38,10 @@ export default ({ strapi }: { strapi: Strapi }) => {
       // Collection Types
       if (kind === 'collectionType') {
         if (!multiple) {
-          return { id: 'ID' };
+          return {
+            documentId: nonNull(idArg()),
+            status: args.PublicationStatusArg,
+          };
         }
 
         const params = {
@@ -45,6 +49,7 @@ export default ({ strapi }: { strapi: Strapi }) => {
           pagination: args.PaginationArg,
           sort: args.SortArg,
           publicationState: args.PublicationStateArg,
+          status: args.PublicationStatusArg,
         };
 
         return params;
@@ -54,6 +59,7 @@ export default ({ strapi }: { strapi: Strapi }) => {
       if (kind === 'singleType') {
         const params = {
           publicationState: args.PublicationStateArg,
+          status: args.PublicationStatusArg,
         };
 
         return params;
