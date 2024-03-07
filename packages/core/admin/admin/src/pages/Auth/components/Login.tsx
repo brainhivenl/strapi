@@ -18,6 +18,7 @@ import {
   Column,
   LayoutContent,
 } from '../../../layouts/UnauthenticatedLayout';
+import { InjectionZone } from '../../../components/InjectionZone';
 
 import { FieldActionWrapper } from './FieldActionWrapper';
 
@@ -183,6 +184,7 @@ const Login = ({ children }: LoginProps) => {
                   <Button fullWidth type="submit">
                     {formatMessage({ id: 'Auth.form.button.login', defaultMessage: 'Login' })}
                   </Button>
+                  <InjectionZone area="auth-sso.login.buttons" />
                 </Flex>
               </Form>
             )}
