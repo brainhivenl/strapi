@@ -18,6 +18,11 @@ const INJECTION_ZONES = {
       unpublishModalAdditionalInfos: [],
     },
   },
+  'auth-sso': {
+    login: {
+      buttons: []
+    }
+  }
 } satisfies InjectionZones;
 
 interface InjectionZoneComponent {
@@ -48,6 +53,11 @@ interface InjectionZones {
       unpublishModalAdditionalInfos: InjectionZoneComponent[];
     };
   };
+  'auth-sso': {
+    login: {
+      buttons: InjectionZoneComponent[];
+    }
+  }
 }
 
 type InjectionZoneArea =
@@ -58,7 +68,8 @@ type InjectionZoneArea =
   | 'contentManager.listView.unpublishModalAdditionalInfos'
   | 'contentManager.listView.deleteModalAdditionalInfos'
   | 'contentManager.listView.publishModalAdditionalInfos'
-  | 'contentManager.listView.deleteModalAdditionalInfos';
+  | 'contentManager.listView.deleteModalAdditionalInfos'
+  | 'auth-sso.login.buttons';
 
 type InjectionZoneModule = InjectionZoneArea extends `${infer Word}.${string}` ? Word : never;
 type InjectionZoneContainer = InjectionZoneArea extends `${string}.${infer Word}.${string}`
